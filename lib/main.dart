@@ -177,7 +177,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-    Future<void> startAutomation() async {
+  Future<void> openAccessibilitySettings() async {
+    await _nativeChannel.invokeMethod('openAccessibilitySettings');
+  }
+
+  Future<void> startAutomation() async {
     if (running) return;
 
     await _nativeChannel.invokeMethod('startAutomation');
@@ -233,6 +237,20 @@ class _HomePageState extends State<HomePage> {
               onChanged: (value) {
                 phoneNumber = value;
               },
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: openAccessibilitySettings,
+                icon: const Icon(Icons.accessibility_new),
+                label: const Text(
+                  'CONFIGURAR ACESSIBILIDADE',
+                ),
+              ),
             ),
 
             const SizedBox(height: 16),
