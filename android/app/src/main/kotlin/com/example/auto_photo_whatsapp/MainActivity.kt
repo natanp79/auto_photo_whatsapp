@@ -1,6 +1,7 @@
 package com.example.auto_photo_whatsapp
 
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -10,7 +11,9 @@ class MainActivity : FlutterActivity() {
 
     private val channelName = "auto_photo_whatsapp/native"
 
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+    override fun configureFlutterEngine(
+        flutterEngine: FlutterEngine
+    ) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(
@@ -21,18 +24,21 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
 
                 "openAccessibilitySettings" -> {
-                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    val intent =
+                        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+
                     startActivity(intent)
+
                     result.success(true)
                 }
 
                 "startAutomation" -> {
-                    AutomationState.running = true
+                    startAutomationService()
                     result.success(true)
                 }
 
                 "stopAutomation" -> {
-                    AutomationState.running = false
+                    stopAutomationService()
                     result.success(true)
                 }
 
@@ -42,9 +48,38 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
+
+    private fun startAutomationService() {
+
+        AutomationState.running = true
+
+        val serviceIntent = Intent(
+            this,
+            AutomationForegroundService::class.java
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+    }
+
+    private fun stopAutomationService() {
+
+        AutomationState.running = false
+
+        val serviceIntent = Intent(
+            this,
+            AutomationForegroundService::class.java
+        )
+
+        stopService(serviceIntent)
+    }
 }
 
 object AutomationState {
+
     @Volatile
     var running: Boolean = false
 }
