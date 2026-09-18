@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -147,6 +146,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const MethodChannel _nativeChannel =
+      MethodChannel('auto_photo_whatsapp/native');
+
   bool running = false;
   bool loadingPhotos = false;
 
@@ -175,15 +177,23 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void startAutomation() {
+    Future<void> startAutomation() async {
     if (running) return;
+
+    await _nativeChannel.invokeMethod('startAutomation');
+
+    if (!mounted) return;
 
     setState(() {
       running = true;
     });
   }
 
-  void stopAutomation() {
+  Future<void> stopAutomation() async {
+    await _nativeChannel.invokeMethod('stopAutomation');
+
+    if (!mounted) return;
+
     setState(() {
       running = false;
     });

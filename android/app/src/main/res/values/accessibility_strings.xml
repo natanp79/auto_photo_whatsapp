@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_description">
+        Permite ao aplicativo interagir com a interface do WhatsApp Business durante a automação autorizada pelo usuário.
+    </string>
+</resources>
