@@ -74,7 +74,6 @@ bool accepted = false;
 Future<void> accept() async {
 if (!accepted) return;
 
-```
 final prefs = await SharedPreferences.getInstance();
 
 await prefs.setBool(
@@ -93,7 +92,6 @@ Navigator.pushReplacement(
     ),
   ),
 );
-```
 
 }
 
@@ -206,7 +204,6 @@ List<AssetEntity> photos = [];
 void initState() {
 super.initState();
 
-```
 recipientNameController =
     TextEditingController(
   text: widget.recipientName,
@@ -218,7 +215,6 @@ recipientPhoneController =
 );
 
 loadPhotos();
-```
 
 }
 
@@ -236,7 +232,6 @@ loadingPhotos = true;
 });
 }
 
-```
 final result =
     await PhotoService.getLatestTenPhotos();
 
@@ -246,7 +241,6 @@ setState(() {
   photos = result;
   loadingPhotos = false;
 });
-```
 
 }
 
@@ -254,7 +248,6 @@ Future<bool> saveRecipient() async {
 final name =
 recipientNameController.text.trim();
 
-```
 final phone =
     recipientPhoneController.text.trim();
 
@@ -321,7 +314,6 @@ ScaffoldMessenger.of(context)
 );
 
 return true;
-```
 
 }
 
@@ -336,7 +328,6 @@ if (running || savingRecipient) {
 return;
 }
 
-```
 final saved =
     await saveRecipient();
 
@@ -353,7 +344,6 @@ if (!mounted) return;
 setState(() {
   running = true;
 });
-```
 
 }
 
@@ -362,13 +352,11 @@ await _nativeChannel.invokeMethod(
 'stopAutomation',
 );
 
-```
 if (!mounted) return;
 
 setState(() {
   running = false;
 });
-```
 
 }
 
@@ -376,7 +364,6 @@ Future<void> resetConsent() async {
 final prefs =
 await SharedPreferences.getInstance();
 
-```
 await prefs.setBool(
   'consent_accepted',
   false,
@@ -390,7 +377,6 @@ Navigator.pushReplacement(
     builder: (_) => const ConsentPage(),
   ),
 );
-```
 
 }
 
@@ -399,7 +385,6 @@ Widget build(BuildContext context) {
 final recipientName =
 recipientNameController.text.trim();
 
-```
 return Scaffold(
   appBar: AppBar(
     title: const Text(
@@ -663,7 +648,6 @@ return Scaffold(
     ),
   ),
 );
-```
 
 }
 }
