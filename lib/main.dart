@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() async {
+import 'photo_service.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
@@ -86,26 +91,20 @@ class _ConsentPageState extends State<ConsentPage> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Este aplicativo acessará as fotos do dispositivo '
+              'O aplicativo acessará as fotos do dispositivo '
               'para selecionar as 10 imagens mais recentes.',
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
             const Text(
-              'Quando ativada, a automação enviará as imagens '
-              'selecionadas para o WhatsApp Business configurado.',
+              'Quando ativada, a automação poderá compartilhar '
+              'essas imagens pelo WhatsApp Business configurado.',
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
             const Text(
-              'A automação funcionará em ciclos de aproximadamente '
+              'A automação ocorrerá em ciclos de aproximadamente '
               '2 minutos enquanto estiver ativa.',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Você poderá interromper o processo a qualquer momento '
-              'utilizando o botão STOP.',
               style: TextStyle(fontSize: 16),
             ),
             const Spacer(),
@@ -149,9 +148,36 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool running = false;
+  bool loadingPhotos = false;
+
   String phoneNumber = '';
 
+  List<AssetEntity> photos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadPhotos();
+  }
+
+  Future<void> loadPhotos() async {
+    setState(() {
+      loadingPhotos = true;
+    });
+
+    final result = await PhotoService.getLatestTenPhotos();
+
+    if (!mounted) return;
+
+    setState(() {
+      photos = result;
+      loadingPhotos = false;
+    });
+  }
+
   void startAutomation() {
+    if (running) return;
+
     setState(() {
       running = true;
     });
@@ -186,16 +212,7 @@ class _HomePageState extends State<HomePage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Automação de fotos',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
             TextField(
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
@@ -207,9 +224,80 @@ class _HomePageState extends State<HomePage> {
                 phoneNumber = value;
               },
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    '10 fotos mais recentes',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: loadingPhotos ? null : loadPhotos,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: loadingPhotos
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : photos.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Nenhuma foto disponível.\n'
+                            'Verifique a permissão de fotos.',
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : GridView.builder(
+                          itemCount: photos.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                          itemBuilder: (context, index) {
+                            return FutureBuilder<Uint8List?>(
+                              future: photos[index].thumbnailDataWithSize(
+                                const ThumbnailSize(500, 500),
+                              ),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.memory(
+                                    snapshot.data!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+            ),
+
+            const SizedBox(height: 12),
+
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 color: running
@@ -221,12 +309,12 @@ class _HomePageState extends State<HomePage> {
                   Text(
                     running ? 'ATIVO' : 'PARADO',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: running ? Colors.green : Colors.red,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     running
                         ? 'Automação em execução'
@@ -235,40 +323,30 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Próximo ciclo: 2 minutos',
-              textAlign: TextAlign.center,
-            ),
-            const Spacer(),
+
+            const SizedBox(height: 12),
+
             SizedBox(
-              height: 55,
+              width: double.infinity,
+              height: 52,
               child: FilledButton(
                 onPressed: running ? null : startAutomation,
-                child: const Text(
-                  'INICIAR',
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: const Text('INICIAR'),
               ),
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 8),
+
             SizedBox(
-              height: 55,
+              width: double.infinity,
+              height: 52,
               child: FilledButton(
                 onPressed: running ? stopAutomation : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.red,
                 ),
-                child: const Text(
-                  'STOP',
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: const Text('STOP'),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: resetConsent,
-              child: const Text('Redefinir consentimento'),
             ),
           ],
         ),
